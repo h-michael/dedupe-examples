@@ -71,6 +71,8 @@ con = MySQLdb.connect(db='contributions',
                       read_default_file = MYSQL_CNF, 
                       cursorclass=MySQLdb.cursors.SSDictCursor)
 c = con.cursor()
+c.execute("SET sql_mode = ''")
+
 c.execute("SET net_write_timeout = 3600")
 
 con2 = MySQLdb.connect(db='contributions',
@@ -78,6 +80,7 @@ con2 = MySQLdb.connect(db='contributions',
                        read_default_file = MYSQL_CNF, 
                        cursorclass=MySQLdb.cursors.SSCursor)
 c2 = con2.cursor()
+c2.execute("SET sql_mode = ''")
 c2.execute("SET net_write_timeout = 3600")
 
 
@@ -210,6 +213,7 @@ def dbWriter(sql, rows) :
                            read_default_file = MYSQL_CNF) 
 
     cursor = conn.cursor()
+    cursor.execute("SET sql_mode = ''")
     cursor.executemany(sql, rows)
     cursor.close()
     conn.commit()
@@ -268,7 +272,8 @@ c.execute("CREATE TABLE plural_key "
           "(block_key VARCHAR(200), "
           " block_id INTEGER UNSIGNED AUTO_INCREMENT, "
           " PRIMARY KEY (block_id)) "
-          "(SELECT MIN(block_key) FROM "
+          "CHARACTER SET utf8 COLLATE utf8_unicode_ci"
+          "(SELECT MIN(block_key) as block_key FROM "
           " (SELECT block_key, "
           "  GROUP_CONCAT(donor_id ORDER BY donor_id) AS block "
           "  FROM blocking_map "
@@ -280,6 +285,7 @@ c.execute("CREATE UNIQUE INDEX block_key_idx ON plural_key (block_key)")
 
 logging.info("calculating plural_block")
 c.execute("CREATE TABLE plural_block "
+          "CHARACTER SET utf8 COLLATE utf8_unicode_ci"
           "(SELECT block_id, donor_id "
           " FROM blocking_map INNER JOIN plural_key "
           " USING (block_key))")
@@ -301,6 +307,7 @@ c.execute("SET group_concat_max_len = 2048")
 
 logging.info("creating covered_blocks")
 c.execute("CREATE TABLE covered_blocks "
+          "CHARACTER SET utf8 COLLATE utf8_unicode_ci"
           "(SELECT donor_id, "
           " GROUP_CONCAT(block_id ORDER BY block_id) AS sorted_ids "
           " FROM plural_block "
@@ -314,6 +321,7 @@ c.execute("CREATE UNIQUE INDEX donor_idx ON covered_blocks (donor_id)")
 # GROUP_CONCAT we can achieve this by using some string hacks.
 logging.info("creating smaller_coverage")
 c.execute("CREATE TABLE smaller_coverage "
+          "CHARACTER SET utf8 COLLATE utf8_unicode_ci"
           "(SELECT donor_id, block_id, "
           " TRIM(',' FROM SUBSTRING_INDEX(sorted_ids, block_id, 1)) AS smaller_ids "
           " FROM plural_block INNER JOIN covered_blocks "

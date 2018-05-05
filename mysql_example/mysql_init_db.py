@@ -53,6 +53,7 @@ conn = MySQLdb.connect(read_default_file = os.path.abspath('.') + '/mysql.cnf',
                        local_infile = 1,
                        db='contributions')
 c = conn.cursor()
+c.execute("SET sql_mode = ''")
 
 print('importing raw data from csv...')
 c.execute("DROP TABLE IF EXISTS raw_table")
